@@ -4,99 +4,159 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>مسارنا 🚌</title>
+<title>مسارنا | نموذج تفاعلي</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <style>
 *{box-sizing:border-box}
-body{margin:0;font-family:Arial,sans-serif;color:#19354a;background:#f2f6fa}
-header{background:#185579;color:#fff;text-align:center;padding:16px}
-header h1{margin:0 0 5px}
-header p{margin:0}
-main{max-width:850px;padding:12px;margin:auto}
-.panel{background:#fff;border-radius:14px;padding:14px;margin-bottom:12px}
-h3{margin:2px 0 12px}
-button,select{width:100%;padding:12px;margin:5px 0;border-radius:9px;font-size:15px}
-button{background:#176d9d;color:white;border:0;font-weight:bold;cursor:pointer}
-button:disabled{opacity:.5}
-select{background:white;border:1px solid #b8c7d3}
-.muted{background:#e9eff5;color:#19354a}
-.danger{background:#a84551}
-#map{height:55vh;min-height:350px;border-radius:12px;margin-bottom:12px}
-#status,#result{line-height:1.8}
-.stop{background:#edf4fa;padding:8px;margin:5px 0;border-radius:8px}
-small{color:#596c80;line-height:1.6;display:block}
-[hidden]{display:none!important}
-.start-pin{
-  width:35px;height:35px;
-  background:#1685d3;
-  border:3px solid white;
-  border-radius:50% 50% 50% 0;
-  transform:rotate(-45deg);
-  box-shadow:0 2px 8px #555;
-  display:flex;align-items:center;justify-content:center;
-}
-.start-pin span{transform:rotate(45deg);font-size:15px}
+body{margin:0;background:#f3f7fc;color:#18364b;font:15px system-ui,Tahoma,Arial}
+header{background:#145477;color:#fff;padding:22px 16px;text-align:center}
+h1{margin:0 0 4px}
+header p{margin:0;opacity:.9}
+main{max-width:980px;margin:auto;padding:15px}
+.notice{background:#fff4dc;border:1px solid #e5c276;padding:12px;border-radius:12px;line-height:1.6;margin-bottom:12px}
+.panel{background:#fff;border-radius:15px;padding:15px;margin:12px 0;box-shadow:0 2px 8px #1232}
+.tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.tabs button{background:#e3edf5;color:#19405e}
+.tabs button.active{background:#145477;color:#fff}
+button,select,input{font:inherit;border-radius:10px;padding:11px;border:1px solid #c8d7e2}
+button{background:#12689a;color:white;border:none;cursor:pointer}
+button:disabled{opacity:.55;cursor:default}
+.stack{display:grid;gap:9px}
+select{width:100%;background:white}
+.row{display:flex;gap:8px;flex-wrap:wrap}
+.row>*{flex:1}
+#map{height:min(58vh,510px);min-height:330px;border-radius:14px;z-index:0}
+.help{font-size:13px;color:#526b7e;line-height:1.6}
+.stat{font-weight:700;margin:9px 0}
+.hidden{display:none!important}
+.routeitem{background:#eff5fa;margin:5px 0;padding:9px;border-radius:8px}
+.primary{background:#12689a}
+.muted{background:#e7eef4;color:#18364b}
+.danger{background:#a8414c}
+footer{padding:20px;color:#637888;text-align:center;font-size:12px}
+.startpin{font-size:26px;text-shadow:0 1px 2px white}
+label{display:block;font-weight:600;margin-bottom:5px}
 </style>
 </head>
 <body>
 <header>
 <h1>🚌 مسارنا</h1>
-<p>تنظيم المحطات ضمن ترتيب التجمعات</p>
+<p>تجربة تنظيم محطات الباصات</p>
 </header>
 <main>
-<section class="panel" id="adminPanel" hidden>
-<h3>إعدادات الإدارة التجريبية</h3>
-<select id="adminGroup">
-<option value="0">أفراد — شوارع ٦–١٠</option>
-<option value="1">فلل الضباط</option>
-<option value="2">أفراد — شوارع ١–٥</option>
-<option value="3">العماير</option>
-</select>
-<button id="drawButton">✏️ رسم حدود التجمع المختار</button>
-<button id="saveButton">✅ حفظ حدود التجمع</button>
-<button class="muted" id="undoPointButton">تراجع عن نقطة حدود</button>
-<button class="muted" id="startButton">🚌 تعيين بداية الباص الثابتة (مرة واحدة)</button>
-<button class="danger" id="deleteButton">حذف حدود التجمع المختار</button>
-<small>وضع الإدارة هنا غير محمي. هذه تجربة على متصفح واحد فقط، وليست صلاحيات حقيقية.</small>
-</section>
+<div class="notice">
+<b>نسخة محلية تجريبية:</b>
+لا تشارك المحطات مع أجهزة أخرى، ولا تحتوي على تسجيل دخول حقيقي.
+لا تدخلي مواقع بيوت فعلية أو مناطق مقيدة.
+كل النقاط المستخدمة للتجربة تكون على طرق عامة فقط.
+</div>
+
 <section class="panel">
-<h3>📍 محطة النزول</h3>
-<select id="chooseGroup">
-<option value="">عرض كل التجمعات</option>
-<option value="0">أفراد — شوارع ٦–١٠</option>
-<option value="1">فلل الضباط</option>
-<option value="2">أفراد — شوارع ١–٥</option>
-<option value="3">العماير</option>
-</select>
-<button class="muted" id="stationButton">📍 اختيار محطة على الخريطة</button>
-<div id="status" role="status">اضغطي داخل منطقة ملونة لإضافة محطة.</div>
+<div class="tabs">
+<button id="tab-student" class="active" data-view="student">البنات</button>
+<button id="tab-driver" data-view="driver">السائق</button>
+<button id="tab-admin" data-view="admin">الإدارة</button>
+</div>
+<p class="help">التنقل بين الواجهات للعرض فقط، وليس حماية صلاحيات.</p>
 </section>
-<div id="map" aria-label="خريطة المحطات"></div>
+
+<section class="panel stack" id="student">
+<h3>تحديد محطة النزول / الركوب</h3>
+<label for="studentTrip">اختاري رحلتك</label>
+<select id="studentTrip"></select>
+<p id="studentHint" class="help">اضغطي على الخريطة لإضافة محطة تجريبية.</p>
+<div class="row">
+<button id="addMode">📍 إضافة محطة</button>
+<button id="removeOwn" class="muted">حذف آخر محطة لهذه الرحلة</button>
+</div>
+<div class="stat" id="studentCount"></div>
+<button id="sendTrip">📨 اعتماد الرحلة وإظهارها للسائق</button>
+<p class="help">في النسخة الحقيقية يُسمح فقط للمشتركات في الرحلة بإرسالها؛ هذا الزر هنا للتجربة.</p>
+</section>
+
+<section class="panel stack hidden" id="driver">
+<h3>واجهة السائق</h3>
+<label for="driverTrip">الرحلة</label>
+<select id="driverTrip"></select>
+<div id="driverStatus"></div>
+<div id="driverStops"></div>
+<p class="help">يظهر المسار للسائق في هذه النسخة بعد اعتماده. المسار المعروض ترتيب نقاط تجريبي، وليس ملاحة فعلية.</p>
+</section>
+
+<section class="panel stack hidden" id="admin">
+<h3>إدارة التجمعات (تجريبية)</h3>
+<label for="zoneGroup">التجمع</label>
+<select id="zoneGroup"></select>
+<div class="row">
+<button id="drawZone">✏️ رسم الحدود</button>
+<button id="saveZone">حفظ الحدود</button>
+<button id="undoVertex" class="muted">تراجع</button>
+</div>
+<div class="row">
+<button id="setStart">🚌 تعيين بداية الباص</button>
+<button id="deleteZone" class="danger">حذف حدود التجمع</button>
+</div>
+<p class="help">اضغطي 3 نقاط أو أكثر حول منطقة تجريبية ثم احفظيها. تبدأ رحلات الرجعة من دبوس الباص، أما رحلة الصباح فلها ترتيب مرن.</p>
+</section>
+
+<div id="map"></div>
+
 <section class="panel">
-<h3>المحطات والمسار</h3>
-<div id="stationList">لا توجد محطات بعد.</div>
-<button class="muted" id="removeButton">حذف آخر محطة</button>
-<label>
-<input type="checkbox" id="demoCheck">
-هذه تجربة بنقاط عامة غير حساسة، وليست مواقع بيوت فعلية
-</label>
-<button id="routeButton">🛣️ احسب مسار القيادة على الشوارع</button>
-<div id="result" role="status"></div>
-<small>
-ترتيب التجمعات ثابت: البوابة ← أفراد ٦–١٠ ← فلل الضباط ← أفراد ١–٥ ← العماير.
-المناطق والبداية تُحفظ على هذا الجهاز فقط؛ محطات البنات لا تتشارك بين أجهزة مختلفة.
-خدمة التوجيه العامة ليست للملاحة الفعلية في المناطق المقيدة.
-</small>
+<div id="status" role="status">الخريطة جاهزة. أضيفي نقاطًا تجريبية.</div>
+<div id="routeSummary"></div>
+<button id="showRoute" class="primary">عرض ترتيب رحلة مختارة</button>
+<p class="help">ترتيب التجمعات في رحلات 12 و2 و4 ثابت: أفراد ٦–١٠ ← فلل الضباط ← أفراد ١–٥ ← العماير. يتجاوز التجمعات الفارغة. المسافة هنا إزاحة تقريبية، وليست طريق قيادة.</p>
 </section>
 </main>
+<footer>مسارنا — نموذج للاختبار على جهاز واحد</footer>
+
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
 'use strict';
-const names=['أفراد ٦–١٠','فلل الضباط','أفراد ١–٥','العماير'];
-const colors=['#2985c8','#9858bc','#d99527','#249c77'];
-const admin=new URLSearchParams(location.search).get('view')==='admin';
-const el=id=>document.getElementById(id);
-el('adminPanel').hidden=!admin;
+
+const $ = id => document.getElementById(id);
+const names = ['أفراد شوارع ٦–١٠','فلل الضباط','أفراد شوارع ١–٥','العماير'];
+const tripNames = {
+  '10':'10 صباحًا — إلى الجامعة',
+  '12':'12 ظهرًا — إلى البيوت',
+  '14':'2 عصرًا — إلى البيوت',
+  '16':'4 عصرًا — إلى البيوت'
+};
+const colors = ['#287fc8','#925bc2','#d69b32','#21966d'];
+
+const day = () => new Intl.DateTimeFormat('en-CA',{
+  timeZone:'Asia/Riyadh',
+  year:'numeric',
+  month:'2-digit',
+  day:'2-digit'
+}).format(new Date());
+
+const storeKey = 'masarna-demo-v3';
+let db;
+try {
+  db = JSON.parse(localStorage.getItem(storeKey));
+} catch {}
+
+if (!db || db.date !== day()) {
+  db = {
+    date:day(),
+    zones:{},
+    start:null,
+    trips:{
+      '10':{stops:[],sent:false},
+      '12':{stops:[],sent:false},
+      '14':{stops:[],sent:false},
+      '16':{stops:[],sent:false}
+    }
+  };
+}
+
+function save(){
+  localStorage.setItem(storeKey,JSON.stringify(db));
+}
+save();
+
+let mode='station', view='student', draft=[], markers=[], routeLine=null;
 
 const map=L.map('map').setView([21.54,39.17],12);
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
@@ -104,322 +164,319 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
   maxZoom:19
 }).addTo(map);
 
-const startIcon=L.divIcon({
-  className:'',
-  html:'<div class="start-pin"><span>🚌</span></div>',
-  iconSize:[35,35],
-  iconAnchor:[17,35],
-  popupAnchor:[0,-33]
-});
-
-function readJSON(key,fallback){
-  try{return JSON.parse(localStorage.getItem(key))??fallback;}
-  catch{return fallback;}
+for(const id of ['studentTrip','driverTrip']){
+  for(const t of Object.keys(tripNames)){
+    const o=document.createElement('option');
+    o.value=t;
+    o.textContent=tripNames[t];
+    $(id).append(o);
+  }
+}
+for(let i=0;i<4;i++){
+  const o=document.createElement('option');
+  o.value=i;
+  o.textContent=names[i];
+  $('zoneGroup').append(o);
 }
 
-let zones=readJSON('masarna-zones',{});
-let startArray=readJSON('masarna-start',null);
-let start=Array.isArray(startArray)&&startArray.length===2
-  ?L.latLng(startArray[0],startArray[1]):null;
-let stops=[],draft=[],mode='station',layers=[],routeLine=null;
-
-function status(message){
-  el('status').textContent=message;
+function pointIn(p,arr){
+  let inside=false;
+  for(let i=0,j=arr.length-1;i<arr.length;j=i++){
+    const a=arr[i], b=arr[j];
+    if((a[0]>p.lat)!==(b[0]>p.lat) &&
+      p.lng<(b[1]-a[1])*(p.lat-a[0])/(b[0]-a[0])+a[1]){
+      inside=!inside;
+    }
+  }
+  return inside;
 }
 
-function clearRoute(){
+function groupFor(p){
+  for(let i=0;i<4;i++){
+    if(db.zones[i] && pointIn(p,db.zones[i])) return i;
+  }
+  return -1;
+}
+
+function dist(a,b){
+  const rad=Math.PI/180,R=6371;
+  const dLat=(b.lat-a.lat)*rad;
+  const dLon=(b.lng-a.lng)*rad;
+  const h=Math.sin(dLat/2)**2+
+    Math.cos(a.lat*rad)*Math.cos(b.lat*rad)*Math.sin(dLon/2)**2;
+  return R*2*Math.asin(Math.sqrt(Math.min(1,h)));
+}
+
+function status(s){
+  $('status').textContent=s;
+}
+
+function resetLine(){
   if(routeLine){
     map.removeLayer(routeLine);
     routeLine=null;
   }
-  el('result').textContent='';
+  $('routeSummary').replaceChildren();
 }
 
-function saveZones(){
-  localStorage.setItem('masarna-zones',JSON.stringify(zones));
-}
+function draw(){
+  markers.forEach(x=>map.removeLayer(x));
+  markers=[];
 
-function redraw(){
-  layers.forEach(layer=>map.removeLayer(layer));
-  layers=[];
-
-  for(const key of Object.keys(zones)){
-    const id=Number(key),poly=zones[key];
-    if(!Array.isArray(poly)||poly.length<3||!names[id])continue;
-    layers.push(L.polygon(poly,{
-      color:colors[id],
-      fillOpacity:.2,
-      weight:3,
+  for(const [id,z] of Object.entries(db.zones)){
+    markers.push(L.polygon(z,{
+      color:colors[+id],
+      fillOpacity:.16,
       interactive:false
     }).addTo(map));
   }
 
   if(draft.length){
-    layers.push(L.polyline(draft,{
-      color:'#263849',
+    markers.push(L.polyline(draft,{
+      color:'#222',
       dashArray:'6,4',
       interactive:false
     }).addTo(map));
-    draft.forEach(p=>layers.push(L.circleMarker(p,{
-      radius:5,interactive:false
-    }).addTo(map)));
+    draft.forEach(p=>markers.push(
+      L.circleMarker(p,{radius:5,interactive:false}).addTo(map)
+    ));
   }
 
-  if(start){
-    layers.push(L.marker(start,{
-      icon:startIcon,interactive:false
+  if(db.start){
+    markers.push(L.marker(db.start,{
+      icon:L.divIcon({
+        className:'',
+        html:'<span class="startpin">📍🚌</span>',
+        iconSize:[38,38],
+        iconAnchor:[18,35]
+      }),
+      interactive:false
     }).addTo(map));
   }
 
-  stops.forEach((s,i)=>layers.push(L.circleMarker(s.point,{
-    radius:9,
-    color:colors[s.group],
-    fillColor:colors[s.group],
-    fillOpacity:1,
-    interactive:false
-  }).addTo(map)));
+  const t=view==='driver' ? $('driverTrip').value : $('studentTrip').value;
+  db.trips[t].stops.forEach((s,i)=>{
+    markers.push(L.circleMarker([s.lat,s.lng],{
+      radius:9,
+      color:colors[s.group]??'#777',
+      fillOpacity:1,
+      interactive:false
+    }).addTo(map));
+  });
 
-  el('stationList').innerHTML=stops.length
-    ?stops.map((s,i)=>'<div class="stop">'+(i+1)+'. '+names[s.group]+'</div>').join('')
-    :'لا توجد محطات بعد.';
+  $('studentCount').textContent=
+    `عدد محطات رحلة ${tripNames[$('studentTrip').value]}: ${db.trips[$('studentTrip').value].stops.length}`;
+  driverInfo();
 }
 
-function pointInside(point,polygon){
-  const x=point.lng,y=point.lat;
-  let inside=false;
-  for(let i=0,j=polygon.length-1;i<polygon.length;j=i++){
-    const xi=polygon[i][1],yi=polygon[i][0];
-    const xj=polygon[j][1],yj=polygon[j][0];
-    if((yi>y)!==(yj>y) &&
-       x<(xj-xi)*(y-yi)/(yj-yi)+xi)inside=!inside;
-  }
-  return inside;
+function driverInfo(){
+  const t=$('driverTrip').value;
+  const tr=db.trips[t];
+  $('driverStatus').textContent=tr.sent?'✅ تم اعتماد المسار':'⏳ لم يُرسل المسار للسائق بعد';
+  $('driverStops').innerHTML=tr.sent
+    ? tr.stops.map((s,i)=>`<div class="routeitem">${i+1}. ${names[s.group]||'محطة تجريبية'}</div>`).join('')
+    : 'لا يظهر ترتيب المحطات حتى اعتماد الرحلة.';
 }
 
-function groupOf(point){
-  for(let i=0;i<4;i++){
-    if(Array.isArray(zones[i])&&pointInside(point,zones[i]))return i;
-  }
-  return -1;
+function chosenTrip(){
+  return $('studentTrip').value;
 }
 
 map.on('click',e=>{
-  const point=e.latlng;
+  const p=e.latlng;
 
-  if(mode==='draw'){
-    if(!admin)return;
-    draft.push(point);
-    status('عدد نقاط الحدود: '+draft.length);
-    redraw();
+  if(view==='admin' && mode==='draw'){
+    draft.push(p);
+    status('نقاط حدود المنطقة: '+draft.length);
+    draw();
     return;
   }
 
-  if(mode==='start'){
-    if(!admin)return;
-    start=point;
-    localStorage.setItem('masarna-start',
-      JSON.stringify([point.lat,point.lng]));
+  if(view==='admin' && mode==='start'){
+    db.start=[p.lat,p.lng];
     mode='station';
-    status('حُفظت بداية الباص على هذا المتصفح؛ الدبوس الأزرق هو البداية.');
-    clearRoute();
-    redraw();
+    save();
+    draw();
+    status('حُفظت بداية الباص التجريبية كدبوس.');
     return;
   }
 
-  const group=groupOf(point);
-  if(group<0){
-    status('هذه النقطة خارج المناطق التي رسمتيها.');
-    return;
-  }
-  if(stops.length>=8){
-    status('النسخة التجريبية تسمح بحد أقصى ٨ محطات.');
+  if(view!=='student' || mode!=='station') return;
+
+  const g=groupFor(p);
+  if(g<0){
+    status('الموقع خارج المناطق المحددة. ارسمي حدود منطقة تجريبية أولًا.');
     return;
   }
 
-  stops.push({point,group});
-  status('✅ أُضيفت محطة في '+names[group]);
-  clearRoute();
-  redraw();
+  const tr=db.trips[chosenTrip()];
+  if(tr.sent){
+    status('الرحلة مُعتمدة، لا يمكن إضافة محطات لها.');
+    return;
+  }
+
+  tr.stops.push({lat:p.lat,lng:p.lng,group:g});
+  save();
+  draw();
+  resetLine();
+  status('أضيفت محطة في '+names[g]);
 });
 
-el('stationButton').onclick=()=>{
-  mode='station';draft=[];redraw();
-  status('اضغطي داخل المنطقة الملونة لإضافة محطة.');
+function setView(v){
+  view=v;
+  for(const name of ['student','driver','admin']){
+    $(name).classList.toggle('hidden',name!==v);
+    $('tab-'+name).classList.toggle('active',name===v);
+  }
+  mode='station';
+  draft=[];
+  resetLine();
+  draw();
+}
+
+document.querySelectorAll('[data-view]').forEach(b=>{
+  b.onclick=()=>setView(b.dataset.view);
+});
+
+$('studentTrip').onchange=()=>{resetLine();draw()};
+$('driverTrip').onchange=()=>{resetLine();draw()};
+
+$('addMode').onclick=()=>{
+  mode='station';
+  status('اضغطي داخل منطقة ملونة لإضافة محطة.');
 };
 
-el('chooseGroup').onchange=()=>{
-  const id=el('chooseGroup').value;
-  if(id!==''&&zones[id]){
-    map.fitBounds(L.polygon(zones[id]).getBounds(),{
-      padding:[25,25]
-    });
-  }else if(id!==''){
-    status('هذه المنطقة لم تُرسم على هذا الجهاز.');
-  }
-};
-
-el('removeButton').onclick=()=>{
-  stops.pop();
-  clearRoute();
-  redraw();
-};
-
-if(admin){
-  el('drawButton').onclick=()=>{
-    mode='draw';draft=[];clearRoute();redraw();
-    status('حددي نقاط أطراف التجمع، ثم اضغطي حفظ.');
-  };
-
-  el('undoPointButton').onclick=()=>{
-    if(mode==='draw'){draft.pop();redraw();}
-  };
-
-  el('saveButton').onclick=()=>{
-    if(mode!=='draw'||draft.length<3){
-      status('ارسمي ثلاث نقاط حدود على الأقل أولًا.');
-      return;
-    }
-    const group=Number(el('adminGroup').value);
-    zones[group]=draft.map(p=>[p.lat,p.lng]);
-    saveZones();
-    draft=[];mode='station';
-    clearRoute();redraw();
-    status('✅ حُفظت منطقة '+names[group]+' في هذا المتصفح.');
-  };
-
-  el('startButton').onclick=()=>{
-    mode='start';draft=[];redraw();
-    status('اضغطي مرة واحدة على نقطة بداية الباص التجريبية.');
-  };
-
-  el('deleteButton').onclick=()=>{
-    const group=Number(el('adminGroup').value);
-    if(!confirm('حذف حدود '+names[group]+'؟'))return;
-    delete zones[group];
-    saveZones();
-    stops=stops.filter(s=>s.group!==group);
-    clearRoute();redraw();
-    status('تم حذف حدود التجمع.');
-  };
-}
-
-function coordinates(points){
-  return points.map(p=>p.lng+','+p.lat).join(';');
-}
-
-async function fetchOSRM(url){
-  const response=await fetch(url);
-  if(!response.ok){
-    throw Error('تعذّر الاتصال بخدمة الطرق (HTTP '+response.status+').');
-  }
-  const data=await response.json();
-  if(data.code!=='Ok'){
-    throw Error('لم تعثر الخدمة على طريق متصل بين بعض النقاط.');
-  }
-  return data;
-}
-
-// أقصر ترتيب حسب مسافات القيادة، ضمن ترتيب التجمعات الثابت
-function orderedStops(matrix){
-  const n=stops.length;
-  const full=(1<<n)-1;
-  const memo=new Map();
-
-  function solve(mask,last){
-    if(mask===full)return {cost:0,order:[]};
-    const key=mask+':'+last;
-    if(memo.has(key))return memo.get(key);
-
-    const remaining=[];
-    for(let i=0;i<n;i++){
-      if(!(mask&(1<<i)))remaining.push(i);
-    }
-
-    const minGroup=Math.min(...remaining.map(i=>stops[i].group));
-    let best={cost:Infinity,order:[]};
-
-    for(const i of remaining){
-      if(stops[i].group!==minGroup)continue;
-      const d=matrix[last][i+1];
-      if(typeof d!=='number'||!Number.isFinite(d))continue;
-      const tail=solve(mask|(1<<i),i+1);
-
-      if(d+tail.cost<best.cost){
-        best={cost:d+tail.cost,order:[i,...tail.order]};
-      }
-    }
-    memo.set(key,best);
-    return best;
-  }
-
-  const answer=solve(0,0);
-  if(!Number.isFinite(answer.cost)){
-    throw Error('لا يمكن الوصول إلى جميع المحطات بالطرق المتاحة.');
-  }
-  return answer.order;
-}
-
-el('routeButton').onclick=async()=>{
-  if(!start){
-    status('بداية الباص غير محفوظة على هذا الجهاز. افتحي وضع الإدارة وحدديها مرة واحدة.');
+$('removeOwn').onclick=()=>{
+  const t=db.trips[chosenTrip()];
+  if(t.sent){
+    status('الرحلة اعتمدت بالفعل.');
     return;
   }
-  if(!stops.length){
-    status('أضيفي محطة واحدة على الأقل.');
+  t.stops.pop();
+  save();
+  resetLine();
+  draw();
+};
+
+$('sendTrip').onclick=()=>{
+  const t=db.trips[chosenTrip()];
+  if(!t.stops.length){
+    status('لا توجد محطات لهذه الرحلة.');
     return;
   }
-  if(!el('demoCheck').checked){
-    status('أكدي أن النقاط تجريبية وعامة أولًا.');
+  if(!confirm('اعتماد '+tripNames[chosenTrip()]+' بعد تسجيل '+t.stops.length+' محطة؟'))return;
+  t.sent=true;
+  save();
+  draw();
+  status('تم اعتماد الرحلة في هذه النسخة المحلية. افتحي واجهة السائق على نفس الجهاز لرؤيتها.');
+};
+
+$('drawZone').onclick=()=>{
+  mode='draw';
+  draft=[];
+  draw();
+  status('اضغطي 3 نقاط أو أكثر حول منطقة تجريبية.');
+};
+
+$('undoVertex').onclick=()=>{
+  if(mode==='draw'){
+    draft.pop();
+    draw();
+  }
+};
+
+$('saveZone').onclick=()=>{
+  if(draft.length<3){
+    status('حددي ثلاث نقاط على الأقل.');
+    return;
+  }
+  db.zones[$('zoneGroup').value]=draft.map(p=>[p.lat,p.lng]);
+  mode='station';
+  draft=[];
+  save();
+  draw();
+  status('حفظت حدود '+names[$('zoneGroup').value]);
+};
+
+$('deleteZone').onclick=()=>{
+  if(!confirm('حذف حدود التجمع التجريبي؟'))return;
+  delete db.zones[$('zoneGroup').value];
+  save();
+  draw();
+};
+
+$('setStart').onclick=()=>{
+  mode='start';
+  status('اضغطي على بداية الباص التجريبية.');
+};
+
+$('showRoute').onclick=()=>{
+  const t=view==='driver' ? $('driverTrip').value : $('studentTrip').value;
+  const tr=db.trips[t];
+
+  if(view==='driver' && !tr.sent){
+    status('الرحلة لم تُعتمد بعد.');
+    return;
+  }
+  if(!tr.stops.length){
+    status('أضيفي محطات أولًا.');
     return;
   }
 
-  const btn=el('routeButton');
-  btn.disabled=true;
-  clearRoute();
-  el('result').textContent='جاري حساب مسافات القيادة...';
+  const remainder=tr.stops.map((s,i)=>({...s,i}));
+  const ordered=[];
+  let pos=db.start
+    ? {lat:db.start[0],lng:db.start[1]}
+    : {lat:remainder[0].lat,lng:remainder[0].lng};
 
-  try{
-    const base='https://router.project-osrm.org';
-    const pts=[start,...stops.map(s=>s.point)];
-    const table=await fetchOSRM(
-      base+'/table/v1/driving/'+coordinates(pts)+'?annotations=distance'
+  while(remainder.length){
+    const allowed=t==='10'
+      ? remainder
+      : remainder.filter(s=>s.group===Math.min(...remainder.map(x=>x.group)));
+
+    allowed.sort((a,b)=>dist(pos,a)-dist(pos,b));
+    const next=allowed[0];
+    ordered.push(next);
+    pos=next;
+    remainder.splice(remainder.indexOf(next),1);
+  }
+
+  resetLine();
+
+  let pts=ordered.map(s=>[s.lat,s.lng]);
+  if(t!=='10' && db.start)pts=[db.start,...pts];
+
+  routeLine=L.polyline(pts,{
+    color:'#155dbb',
+    weight:5
+  }).addTo(map);
+
+  if(pts.length>1){
+    map.fitBounds(routeLine.getBounds(),{padding:[28,28]});
+  }
+
+  const res=document.createElement('div');
+  let total=0;
+
+  for(let i=1;i<pts.length;i++){
+    total+=dist(
+      {lat:pts[i-1][0],lng:pts[i-1][1]},
+      {lat:pts[i][0],lng:pts[i][1]}
     );
-
-    const order=orderedStops(table.distances);
-    el('result').textContent='جاري رسم الطريق على الشوارع...';
-    await new Promise(resolve=>setTimeout(resolve,1200));
-
-    const routePoints=[start,...order.map(i=>stops[i].point)];
-    const data=await fetchOSRM(
-      base+'/route/v1/driving/'+coordinates(routePoints)+
-      '?overview=full&geometries=geojson&steps=false'
-    );
-
-    const route=data.routes&&data.routes[0];
-    if(!route)throw Error('لا يوجد مسار مرسوم.');
-
-    routeLine=L.polyline(
-      route.geometry.coordinates.map(c=>[c[1],c[0]]),
-      {color:'#1568c9',weight:6,interactive:false}
-    ).addTo(map);
-
-    map.fitBounds(routeLine.getBounds(),{padding:[25,25]});
-
-    el('result').innerHTML=
-      '<h3>المسار المقترح</h3>'+
-      order.map((i,j)=>(j+1)+'. '+names[stops[i].group]).join('<br>')+
-      '<p><b>المسافة: '+(route.distance/1000).toFixed(2)+' كم</b></p>'+
-      '<p><b>زمن القيادة التقديري: '+Math.round(route.duration/60)+' دقيقة</b></p>'+
-      '<small>ترتيب المحطات حسب أقل مسافات قيادة في مصفوفة OSRM مع تثبيت ترتيب التجمعات. الرسم والتوقيت تقديريان ولا يضمنان السماح باستخدام الطرق.</small>';
-
-  }catch(error){
-    el('result').textContent='تعذّر حساب المسار: '+error.message;
-  }finally{
-    btn.disabled=false;
   }
+
+  res.innerHTML=
+    '<h3>ترتيب تجريبي — '+tripNames[t]+'</h3>'+
+    ordered.map((s,i)=>
+      '<div class="routeitem">'+(i+1)+'. '+names[s.group]+'</div>'
+    ).join('')+
+    '<b>المسافة بخط مستقيم بين المحطات: '+total.toFixed(1)+' كم</b>'+
+    '<p class="help">هذا ليس طريق قيادة، ولا يُستخدم للملاحة الفعلية.</p>';
+
+  $('routeSummary').append(res);
 };
 
-redraw();
+setView('student');
 </script>
 </body>
 </html>
