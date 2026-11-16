@@ -2,55 +2,338 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>مسارنا</title>
-  <link rel="stylesheet"
-    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-  <style>
-    body { font-family: Arial; margin: 0; background: #f5f7fb; text-align: center; }
-    header { background: #245b83; color: white; padding: 18px; }
-    #map { height: 65vh; width: 100%; }
-    button { padding: 12px; margin: 10px; border: 0; border-radius: 10px; background: #245b83; color: white; }
-    #stations { padding: 12px; }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>مسارنا 🚌</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,sans-serif;background:#f3f7fb;color:#18334c}
+header{background:#164e78;color:white;text-align:center;padding:18px}
+h1{margin:0 0 8px}
+main{max-width:900px;margin:auto;padding:12px}
+.panel{background:white;border-radius:14px;padding:15px;margin-bottom:12px}
+button,select{width:100%;font-size:15px;padding:12px;margin:5px 0;border-radius:9px}
+button{border:0;background:#176a9c;color:white;font-weight:bold}
+button:disabled{opacity:.5}
+select{border:1px solid #ccd5df;background:white}
+.secondary{background:#edf2f7;color:#173b57}
+.danger{background:#a83f4b}
+#map{height:53vh;min-height:350px;border-radius:12px;margin-bottom:12px}
+#status,#result{line-height:1.8}
+small{color:#64748b}
+.chip{padding:8px;border-radius:8px;background:#eaf3fb;margin:6px 0}
+</style>
 </head>
 <body>
-  <header>
-    <h2>🚌 مسارنا</h2>
-    <p>حددي محطة نزولك على الخريطة</p>
-  </header>
+<header>
+<h1>🚌 مسارنا</h1>
+<p>اختاري منطقتك وحددي محطة نزولك</p>
+</header>
+<main>
 
-  <div id="map"></div>
-  <div id="stations">المحطات المحددة: 0</div>
-  <button onclick="clearStations()">مسح المحطات</button>
+<div class="panel">
+<h3>📍 التجمعات الأربعة</h3>
+<select id="group" onchange="goToGroup()">
+<option value="0">أفراد - شوارع ٦ إلى ١٠</option>
+<option value="1">فلل الضباط</option>
+<option value="2">أفراد - شوارع ١ إلى ٥</option>
+<option value="3">العماير</option>
+</select>
+<button onclick="beginDrawing()">✏️ تحديد حدود المنطقة</button>
+<button onclick="saveZone()">✅ حفظ المنطقة</button>
+<button class="secondary" onclick="undoPoint()">تراجع عن آخر نقطة حدود</button>
+<button class="secondary" onclick="chooseStation()">📍 اختيار محطة نزول</button>
+<button class="secondary" onclick="chooseStart()">🚌 تحديد بداية الباص</button>
+<p id="status">اختاري وضعًا ثم اضغطي على الخريطة.</p>
+</div>
 
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script>
-    const map = L.map('map').setView([21.54, 39.17], 12);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '&copy; OpenStreetMap contributors',
-      maxZoom: 19
-    }).addTo(map);
+<div id="map"></div>
 
-    let stations = [];
-    let markers = [];
+<div class="panel">
+<h3>المحطات</h3>
+<div id="count">عدد المحطات: 0</div>
+<div id="stations"></div>
+<button onclick="calculate()">احسب ترتيب المحطات التقريبي</button>
+<button class="secondary" onclick="removeStation()">حذف آخر محطة</button>
+<button class="danger" onclick="clearZones()">حذف جميع المناطق والمحطات</button>
+<div id="result"></div>
+</div>
+<div class="panel">
+<small>
+نسخة تجريبية: حدود المناطق والمحطات محفوظة داخل هذا المتصفح فقط.
+الخريطة تعتمد على OpenStreetMap، ولا تستخدم مواقع حقيقية
+حساسة أو بيانات سكنية خاصة أثناء التجربة.
+</small>
+</div>
+</main>
 
-    map.on('click', function(e) {
-      const marker = L.marker(e.latlng).addTo(map);
-      stations.push(e.latlng);
-      markers.push(marker);
-      document.getElementById('stations').textContent =
-        'المحطات المحددة: ' + stations.length;
-    });
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+const names=[
+"أفراد ٦–١٠",
+"فلل الضباط",
+"أفراد ١–٥",
+"العماير"
+];
+const colors=["#2384c6","#9557bd","#d68d25","#239778"];
 
-    function clearStations() {
-      markers.forEach(marker => map.removeLayer(marker));
-      markers = [];
-      stations = [];
-      document.getElementById('stations').textContent =
-        'المحطات المحددة: 0';
-    }
-  </script>
+const map=L.map("map").setView([21.54,39.17],11);
+L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{
+attribution:"&copy; OpenStreetMap contributors",
+maxZoom:19
+}).addTo(map);
+
+let zones=JSON.parse(localStorage.getItem("masarna-zones")||"{}");
+let stations=[];
+let start=null;
+let mode="station";
+let draft=[];
+let draftLayer=null;
+let layers=[];
+let routeLayer=null;
+
+const status=document.getElementById("status");
+
+function persist(){
+localStorage.setItem("masarna-zones",JSON.stringify(zones));
+}
+
+function cleanLayers(){
+layers.forEach(l=>map.removeLayer(l));
+layers=[];
+if(draftLayer){
+map.removeLayer(draftLayer);
+draftLayer=null;
+}
+}
+
+function redraw(){
+cleanLayers();
+
+Object.keys(zones).forEach(key=>{
+let id=Number(key);
+let polygon=L.polygon(zones[key],{
+color:colors[id],
+fillOpacity:.18,
+weight:3
+}).addTo(map);
+polygon.bindPopup(names[id]);
+layers.push(polygon);
+});
+
+if(draft.length){
+draftLayer=L.polyline(draft,{
+color:"#222",dashArray:"6,5",weight:3
+}).addTo(map);
+draft.forEach(p=>{
+layers.push(L.circleMarker(p,{
+radius:5,color:"#222"
+}).addTo(map));
+});
+}
+
+if(start){
+layers.push(L.marker(start).addTo(map)
+.bindPopup("بداية الباص"));
+}
+
+stations.forEach((s,i)=>{
+layers.push(L.marker(s.point).addTo(map)
+.bindPopup("محطة "+(i+1)+" - "+names[s.group]));
+});
+
+document.getElementById("count").textContent=
+"عدد المحطات: "+stations.length;
+
+document.getElementById("stations").innerHTML=
+stations.map((s,i)=>"<div class='chip'>"+
+(i+1)+". "+names[s.group]+"</div>").join("");
+}
+
+function beginDrawing(){
+mode="draw";
+draft=[];
+status.textContent="اضغطي على أطراف المنطقة نقطة نقطة (٣ نقاط على الأقل).";
+redraw();
+}
+
+function undoPoint(){
+if(mode==="draw"&&draft.length){
+draft.pop();
+redraw();
+}
+}
+
+function saveZone(){
+if(draft.length<3){
+alert("حددي ثلاث نقاط على الأقل");
+return;
+}
+let id=document.getElementById("group").value;
+zones[id]=draft.map(p=>[p.lat,p.lng]);
+persist();
+draft=[];
+mode="station";
+status.textContent="تم حفظ "+names[id]+" على هذا الجهاز.";
+redraw();
+}
+
+function goToGroup(){
+let id=document.getElementById("group").value;
+if(zones[id]){
+map.fitBounds(L.polygon(zones[id]).getBounds(),{
+padding:[25,25]
+});
+status.textContent="تم عرض منطقة "+names[id];
+}else{
+status.textContent="هذه المنطقة لم تُحدد بعد.";
+}
+}
+
+function chooseStation(){
+mode="station";
+draft=[];
+status.textContent="اضغطي على موقع النزول داخل المنطقة.";
+redraw();
+}
+
+function chooseStart(){
+mode="start";
+status.textContent="اضغطي على نقطة بداية الباص.";
+}
+
+function inside(point,polygon){
+let x=point.lng,y=point.lat;
+let found=false;
+for(let i=0,j=polygon.length-1;i<polygon.length;j=i++){
+let yi=polygon[i][0],xi=polygon[i][1];
+let yj=polygon[j][0],xj=polygon[j][1];
+let cross=((yi>y)!==(yj>y))&&
+(x<(xj-xi)*(y-yi)/(yj-yi)+xi);
+if(cross)found=!found;
+}
+return found;
+}
+
+function findGroup(point){
+for(let id=0;id<4;id++){
+if(zones[id]&&inside(point,zones[id])){
+return id;
+}
+}
+return -1;
+}
+
+function clearRoute(){
+if(routeLayer){
+map.removeLayer(routeLayer);
+routeLayer=null;
+}
+document.getElementById("result").innerHTML="";
+}
+
+map.on("click",e=>{
+if(mode==="draw"){
+draft.push(e.latlng);
+status.textContent="نقاط الحدود: "+draft.length;
+redraw();
+return;
+}
+if(mode==="start"){
+start=e.latlng;
+mode="station";
+status.textContent="تم تحديد بداية الباص.";
+clearRoute();
+redraw();
+return;
+}
+let group=findGroup(e.latlng);
+if(group===-1){
+status.textContent="هذه النقطة خارج المناطق المحددة.";
+return;
+}
+stations.push({point:e.latlng,group});
+status.textContent="تم اكتشاف التجمع: "+names[group];
+clearRoute();
+redraw();
+});
+
+function distance(a,b){
+const R=6371;
+const p1=a.lat*Math.PI/180;
+const p2=b.lat*Math.PI/180;
+const dp=(b.lat-a.lat)*Math.PI/180;
+const dl=(b.lng-a.lng)*Math.PI/180;
+const h=Math.sin(dp/2)**2+
+Math.cos(p1)*Math.cos(p2)*Math.sin(dl/2)**2;
+return 2*R*Math.atan2(Math.sqrt(h),Math.sqrt(1-h));
+}
+
+function calculate(){
+if(!start){
+alert("حددي بداية الباص أولًا");
+return;
+}
+if(!stations.length){
+alert("أضيفي محطة واحدة على الأقل");
+return;
+}
+clearRoute();
+let ordered=[];
+let current=start;
+let total=0;
+
+// ترتيب التجمعات ثابت
+for(let g=0;g<4;g++){
+let remaining=stations.filter(s=>s.group===g);
+while(remaining.length){
+remaining.sort((a,b)=>
+distance(current,a.point)-distance(current,b.point));
+let next=remaining.shift();
+total+=distance(current,next.point);
+current=next.point;
+ordered.push(next);
+}
+}
+
+routeLayer=L.polyline(
+[start,...ordered.map(s=>s.point)],
+{color:"#155fba",weight:5}
+).addTo(map);
+
+map.fitBounds(routeLayer.getBounds(),{
+padding:[25,25],maxZoom:16
+});
+
+document.getElementById("result").innerHTML=
+"<h3>ترتيب المحطات المقترح</h3>"+
+ordered.map((s,i)=>(i+1)+". "+names[s.group]).join("<br>")+
+"<p><b>المسافة التقريبية بخطوط مستقيمة: "+
+total.toFixed(2)+" كم</b></p>"+
+"<small>هذا ترتيب تقريبي، وليس أقصر طريق قيادة على الشوارع.</small>";
+}
+
+function removeStation(){
+stations.pop();
+clearRoute();
+redraw();
+}
+
+function clearZones(){
+if(!confirm("حذف جميع المناطق والمحطات من هذا الجهاز؟"))return;
+zones={};
+stations=[];
+start=null;
+draft=[];
+mode="station";
+persist();
+clearRoute();
+redraw();
+status.textContent="تم مسح البيانات.";
+}
+
+redraw();
+</script>
 </body>
 </html>
